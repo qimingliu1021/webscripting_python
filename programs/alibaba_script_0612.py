@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+import datetime
 import time 
 import os
 import csv
@@ -8,6 +9,7 @@ import re
 
 # Setup Selenium WebDriver
 driver = webdriver.Chrome()  
+now = datetime.datetime.now()
 
 directory = '../apparel_manufactures'
 manufacturers_name_url = []
@@ -45,9 +47,9 @@ def categorize_capabilities(soup):
 
         if len(text) < 50: 
         
-            if any(keyword in text for keyword in ['supply chain', 'customization', 'warehouses', 'procurement', 'installation', 'technical support', 'design capabilities', 'factory', 'project solutions']):
+            if any(keyword in text for keyword in ['Minor customization', 'Design-based customization', 'Sample-based customization', 'Full customization', 'Agile supply chain', 'International warehouses', 'Centralized procurement available', 'On-site technical support', 'One-stop procurement', '3D design capabilities', 'Overseas partner factory']):
                 services.append(text)
-            elif any(keyword in text for keyword in ['identification', 'inspection', 'inspectors', 'testing', 'traceability', 'warranty']):
+            elif any(keyword in text for keyword in ['Raw-material traceability identification', 'Finished product inspection', 'QA/QC inspectors', 'On-site material inspection', 'Quality traceability', 'Warranty available', 'Testing instruments']):
                 quality_control.append(text)
             else:
                 certificates.append(text)
@@ -68,7 +70,7 @@ for name, url in manufacturers_name_url:
     #     break;
 
 
-    ##############################      Accessing the website       ##############################
+    ##############################      accessing the website       ##############################
     driver.get(url)
     driver.implicitly_wait(3) # seconds
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -173,6 +175,10 @@ for name, url in manufacturers_name_url:
     detailed_manufacturers_data.append(data)
 
     ####################################  MONITORING 2  ####################################
+    with open(f"log_{now}.txt", "a") as file: 
+        for key, value in data.items(): 
+            file.write(f"{key}: {value}\n")
+        file.write("\n \n")
     print("relevant parameters: ")
     print("Services: ", data['Services'])
     print("Quality Control ", data['Quality Control'])
@@ -182,7 +188,9 @@ for name, url in manufacturers_name_url:
 driver.quit()
 
 # Write to CSV
-with open('manufacturers_data_06_10.csv', 'w', newline='', encoding='utf-8') as csvfile:
+file_name = f'manufacturers_data_{now}.csv'
+with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
+    print(file_name)
     fieldnames = list(detailed_manufacturers_data[0].keys())
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
