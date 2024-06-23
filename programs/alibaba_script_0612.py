@@ -46,10 +46,9 @@ def categorize_capabilities(soup):
         text = item.get_text(strip=True).lower()
 
         if len(text) < 50: 
-        
-            if any(keyword in text for keyword in ['Minor customization', 'Design-based customization', 'Sample-based customization', 'Full customization', 'Agile supply chain', 'International warehouses', 'Centralized procurement available', 'On-site technical support', 'One-stop procurement', '3D design capabilities', 'Overseas partner factory']):
+            if any(keyword in text for keyword in ['minor customization', 'design-based customization', 'sample-based customization', 'full customization', 'agile supply chain', 'international warehouses', 'project solutions', 'project design capability', 'centralized procurement available', 'on-site installation', 'on-site technical support', 'one-stop procurement', '3d design capabilities', 'overseas partner factory']):
                 services.append(text)
-            elif any(keyword in text for keyword in ['Raw-material traceability identification', 'Finished product inspection', 'QA/QC inspectors', 'On-site material inspection', 'Quality traceability', 'Warranty available', 'Testing instruments']):
+            elif any(keyword in text for keyword in ['raw-material traceability identification', 'finished product inspection', 'qa/qc inspectors', 'on-site material inspection', 'quality traceability', 'warranty available', 'testing instruments']):
                 quality_control.append(text)
             else:
                 certificates.append(text)
