@@ -1,3 +1,8 @@
+## About
+Webscript data from alibaba.com, focused on apparel manufactures. 
+
+## Key aspects we focused on for manufactures
+
 ### 1. \*Production Capacity
 
 **Industry Reports**: Look for industry publications that discuss production capacity trends or benchmarks.
