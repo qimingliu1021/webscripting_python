@@ -63,3 +63,4 @@ soup_url_original = BeautifulSoup(driver.page_source, 'html.parser')
 driver.find_element(By.CLASS_NAME, "all-tags").click()
 soup_url_opened = BeautifulSoup(driver.page_source, 'html.parser')
 verified_capabilities = soup.find('div', class_='next-dialog-body')
+
