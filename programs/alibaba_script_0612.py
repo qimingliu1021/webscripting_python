@@ -9,10 +9,10 @@ import re
 
 # Setup Selenium WebDriver
 driver = webdriver.Chrome()  
-now = datetime.datetime.now()
 
 directory = '../apparel_manufactures'
 manufacturers_name_url = []
+now = datetime.datetime.now()
 
 for filename in os.listdir(directory):
   if filename.endswith('.html'):  # Ensures only HTML files are processed
@@ -56,7 +56,7 @@ def categorize_capabilities(soup):
     
     return services, quality_control, certificates
 
-
+html_directory = "htmls"
 # Visit each manufacturer's page
 for name, url in manufacturers_name_url:
 
@@ -69,11 +69,11 @@ for name, url in manufacturers_name_url:
     # if count == 3: 
     #     break;
 
-
-    ##############################      accessing the website       ##############################
+    ##############################      Accessing the website       ##############################
     driver.get(url)
-    driver.implicitly_wait(3) # seconds
     soup = BeautifulSoup(driver.page_source, 'html.parser')
+    with open(f"{html_directory}/{count}_{name}.html", "w") as file: 
+            file.write(soup.text)
     different_manufactures = {}
 
     all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
@@ -81,6 +81,8 @@ for name, url in manufacturers_name_url:
         all_tags_elements[0].click()
         time.sleep(3)
         soup_opened = BeautifulSoup(driver.page_source, 'html.parser')
+        with open(f"{html_directory}/{count}_click_{name}.html", "w") as file:
+            file.write(soup_opened.text)
         services, quality_control, certificates = categorize_capabilities(soup_opened)
     else: 
         different_manufactures[name] = url
@@ -176,6 +178,7 @@ for name, url in manufacturers_name_url:
 
     ####################################  MONITORING 2  ####################################
     with open(f"log_{now}.txt", "a") as file: 
+        file.write(f"\n It's manufacture {count}......")
         for key, value in data.items(): 
             file.write(f"{key}: {value}\n")
         file.write("\n \n")
@@ -188,9 +191,7 @@ for name, url in manufacturers_name_url:
 driver.quit()
 
 # Write to CSV
-file_name = f'manufacturers_data_{now}.csv'
-with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
-    print(file_name)
+with open(f'manufacturers_data_{now}.csv', 'w', newline='', encoding='utf-8') as csvfile:
     fieldnames = list(detailed_manufacturers_data[0].keys())
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
