@@ -36,6 +36,9 @@ detailed_manufacturers_data = []
 
 count = 1
 
+all_service = ['minor customization', 'design-based customization', 'sample-based customization', 'full customization', 'agile supply chain', 'international warehouses', 'project solutions', 'project design capability', 'centralized procurement available', 'on-site installation', 'on-site technical support', 'one-stop procurement', '3d design capabilities', 'overseas partner factory']
+all_qc = ['raw-material traceability identification', 'finished product inspection', 'qa/qc inspectors', 'on-site material inspection', 'quality traceability', 'warranty available', 'testing instruments']
+
 def categorize_capabilities(soup):
     services = []
     quality_control = []
@@ -44,18 +47,29 @@ def categorize_capabilities(soup):
     list_items = soup.find_all('div', class_='list-item')
     for item in list_items:
         text = item.get_text(strip=True).lower()
+        found_service = False
+        for keyword in all_service:
+            if keyword in text:
+                services.append(keyword)
+                found_service = True
+                break  
 
-        if len(text) < 50: 
-            if any(keyword in text for keyword in ['minor customization', 'design-based customization', 'sample-based customization', 'full customization', 'agile supply chain', 'international warehouses', 'project solutions', 'project design capability', 'centralized procurement available', 'on-site installation', 'on-site technical support', 'one-stop procurement', '3d design capabilities', 'overseas partner factory']):
-                services.append(text)
-            elif any(keyword in text for keyword in ['raw-material traceability identification', 'finished product inspection', 'qa/qc inspectors', 'on-site material inspection', 'quality traceability', 'warranty available', 'testing instruments']):
-                quality_control.append(text)
-            else:
+        if not found_service:
+            found_qc = False
+            for keyword in all_qc:
+                if keyword in text:
+                    quality_control.append(keyword)
+                    found_qc = True
+                    break  # Stop checking after the first match to avoid duplicates
+
+            if not found_qc:
                 certificates.append(text)
     
     return services, quality_control, certificates
 
+
 html_directory = "htmls"
+log_directory = "logs"
 # Visit each manufacturer's page
 for name, url in manufacturers_name_url:
 
@@ -68,11 +82,11 @@ for name, url in manufacturers_name_url:
     # if count == 3: 
     #     break;
 
-    ##############################      Accessing the website       ##############################
+    ##############################      Accessing the website        ##############################
     driver.get(url)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-    with open(f"{html_directory}/{count}_{name}.html", "w") as file: 
-            file.write(soup.text)
+    with open(f"{html_directory}/{count}.html", "w") as file: 
+            file.write(soup.prettify())
     different_manufactures = {}
 
     all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
@@ -80,8 +94,8 @@ for name, url in manufacturers_name_url:
         all_tags_elements[0].click()
         time.sleep(3)
         soup_opened = BeautifulSoup(driver.page_source, 'html.parser')
-        with open(f"{html_directory}/{count}_click_{name}.html", "w") as file:
-            file.write(soup_opened.text)
+        with open(f"{html_directory}/{count}_click.html", "w") as file:
+            file.write(soup_opened.prettify())
         services, quality_control, certificates = categorize_capabilities(soup_opened)
     else: 
         different_manufactures[name] = url
@@ -176,8 +190,8 @@ for name, url in manufacturers_name_url:
     detailed_manufacturers_data.append(data)
 
     ####################################  MONITORING 2  ####################################
-    with open(f"log_{now}.txt", "a") as file: 
-        file.write(f"\n It's manufacture {count}......")
+    with open(f"{log_directory}/log_{now}.txt", "a") as file: 
+        file.write(f"\nManufacture {count}......")
         for key, value in data.items(): 
             file.write(f"{key}: {value}\n")
         file.write("\n \n")
@@ -195,5 +209,8 @@ with open(f'manufacturers_data_{now}.csv', 'w', newline='', encoding='utf-8') as
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for data in detailed_manufacturers_data:
-        # print("writing")
+        data['Services'] = ', '.join(data['Services'])
+        data['Quality Control'] = ', '.join(data['Quality Control'])
+        data['Certificates'] = ', '.join(data['Certificates'])
         writer.writerow(data)
+
