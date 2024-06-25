@@ -8,7 +8,7 @@ import csv
 import re
 
 # Setup Selenium WebDriver
-driver = webdriver.Chrome()  
+driver = webdriver.Edge()
 
 directory = '../apparel_manufactures'
 manufacturers_name_url = []
@@ -38,14 +38,17 @@ count = 1
 
 all_service = ['minor customization', 'design-based customization', 'sample-based customization', 'full customization', 'agile supply chain', 'international warehouses', 'project solutions', 'project design capability', 'centralized procurement available', 'on-site installation', 'on-site technical support', 'one-stop procurement', '3d design capabilities', 'overseas partner factory']
 all_qc = ['raw-material traceability identification', 'finished product inspection', 'qa/qc inspectors', 'on-site material inspection', 'quality traceability', 'warranty available', 'testing instruments']
+html_directory = "htmls"
+log_directory = "logs"
 
 def categorize_capabilities(soup):
     services = []
     quality_control = []
     certificates = []
 
-    list_items = soup.find_all('div', class_='list-item')
+    list_items = soup.select('.list-item:not(.no-select-text)')
     for item in list_items:
+
         text = item.get_text(strip=True).lower()
         found_service = False
         for keyword in all_service:
@@ -68,8 +71,43 @@ def categorize_capabilities(soup):
     return services, quality_control, certificates
 
 
-html_directory = "htmls"
-log_directory = "logs"
+def must_get_page_source(url): 
+    get_the_source = False
+    while not get_the_source: 
+        driver.get(url)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        if soup.find('div', class_='module-verifiedProfile'): 
+            get_the_source = True
+        # when there's 404 page
+        if soup.find('div', 'info-404img'): 
+            with open(f"PROBLEM_{now}") as file: 
+                file.write(f"{url}\n \n")
+            services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
+            break
+        # For different html layout
+        if soup.find('div', class_='icbu-mod-wrapper no-title icbu-pc-cpCompanyOverview false v2'): 
+            services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
+            #
+            with open(f"{log_directory}/{log_directory}/DIFFERENT_{now}", "a") as file: 
+                file.write(f"{url}\n \n")
+            break
+        time.sleep(5)
+    # Get the clicked page
+    all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
+    all_tags_elements[0].click()
+    time.sleep(3)
+    soup_opened = BeautifulSoup(driver.page_source, 'html.parser')
+    with open(f"{html_directory}/{count}_click.html", "w") as file:
+        file.write(soup_opened.prettify())
+    
+    services, quality_control, certificates = categorize_capabilities(soup_opened)
+
+    with open(f"{html_directory}/{count}.html", "w") as file: 
+                file.write(soup.prettify())
+    
+    return soup, services, quality_control, certificates
+
+
 # Visit each manufacturer's page
 for name, url in manufacturers_name_url:
 
@@ -79,28 +117,21 @@ for name, url in manufacturers_name_url:
 
     count += 1
     # a switch - on/off to control the # number of manufactures
-    # if count == 3: 
+    # if count == 10: 
     #     break;
 
     ##############################      Accessing the website        ##############################
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    with open(f"{html_directory}/{count}.html", "w") as file: 
-            file.write(soup.prettify())
-    different_manufactures = {}
+    
+    soup = must_get_page_source(url)
 
     all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
     if all_tags_elements: 
-        all_tags_elements[0].click()
-        time.sleep(3)
-        soup_opened = BeautifulSoup(driver.page_source, 'html.parser')
-        with open(f"{html_directory}/{count}_click.html", "w") as file:
-            file.write(soup_opened.prettify())
-        services, quality_control, certificates = categorize_capabilities(soup_opened)
+        
     else: 
         different_manufactures[name] = url
         services, quality_control, certificates = 'problem', 'problem', 'problem'
-
+    
+    different_manufactures = {}
 
     #############################   order numbers and total amounts   #############################
     total_order_number = 'N/A'
@@ -122,27 +153,6 @@ for name, url in manufacturers_name_url:
             if 'Main categories' in span.text:
                 main_categories = span.text.split(":")[1].rstrip(".").replace(" / ", ", ").strip()
                 break
-    
-    #############################   MOQ and corresponding products  ###############################
-    # imgs
-    images = [img['src'] for img in soup.select('.next-slick-slide .product-image img') if 'src' in img.attrs][:4]
-    images += ['N/A'] * (4 - len(images))
-
-    # Orders so far
-    orders_so_far_elements = soup.select('.next-slick-slide .sold-text')
-    if [order.text.strip() if order else 'N/A' for order in orders_so_far_elements][:4]:
-        orders_so_far = [order.text.strip() if order and order.text.strip() != '' else 'N/A' for order in orders_so_far_elements][:4]
-        orders_so_far += ['N/A'] * (4 - len(orders_so_far))
-    else:
-        orders_so_far = ['N/A'] * 4
-
-    # MOQ
-    min_orders_elements = soup.select('.next-slick-slide .moq')
-    if [order.text.strip() if order else 'N/A' for order in min_orders_elements][:4]:
-        min_orders = [order.text.strip() if order and order.text.strip() != '' else 'N/A' for order in min_orders_elements][:4]
-        min_orders += ['N/A'] * (4 - len(min_orders))
-    else:
-        min_orders = ['N/A'] * 4
 
     #############################          writing data             ################################
     data = {
@@ -173,18 +183,6 @@ for name, url in manufacturers_name_url:
         'Customization Options':        soup.find(string='Customization options').find_next('strong').text.strip() if soup.find(string='Customization options') else 'N/A',
         'New Products Launched Last Year': soup.find(string='New products launched in last year').find_next('strong').text.strip() if soup.find(string='New products launched in last year') else 'N/A',
         'R&D Engineers':                soup.find(string='R&D engineers').find_next('strong').text.strip() if soup.find(string='R&D engineers') else 'N/A',
-        'Main Product 1':       "https:" + images[0],
-        'Main Product 1 MOQ':   min_orders[0],
-        'Product 1 Orders So far': orders_so_far[0],
-        'Main Product 2':       "https:" + images[1],
-        'Main Product 2 MOQ':   min_orders[1],
-        'Product 2 Orders So far': orders_so_far[1],
-        'Main Product 3':       "https:" + images[2],
-        'Main Product 3 MOQ':   min_orders[2],
-        'Product 3 Orders So far': orders_so_far[2],
-        'Main Product 4':       "https:" + images[3],
-        'Main Product 4 MOQ':   min_orders[3],
-        'Product 4 Orders So far': orders_so_far[3],
     }
 
     detailed_manufacturers_data.append(data)
