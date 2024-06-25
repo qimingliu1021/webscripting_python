@@ -80,17 +80,12 @@ def must_get_page_source(url):
             get_the_source = True
         # when there's 404 page
         if soup.find('div', 'info-404img'): 
-            with open(f"PROBLEM_{now}") as file: 
-                file.write(f"{url}\n \n")
             services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
-            break
+            return soup, services, quality_control, certificates
         # For different html layout
         if soup.find('div', class_='icbu-mod-wrapper no-title icbu-pc-cpCompanyOverview false v2'): 
             services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
-            #
-            with open(f"{log_directory}/{log_directory}/DIFFERENT_{now}", "a") as file: 
-                file.write(f"{url}\n \n")
-            break
+            return soup, services, quality_control, certificates
         time.sleep(5)
     # Get the clicked page
     all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
@@ -122,16 +117,7 @@ for name, url in manufacturers_name_url:
 
     ##############################      Accessing the website        ##############################
     
-    soup = must_get_page_source(url)
-
-    all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
-    if all_tags_elements: 
-        
-    else: 
-        different_manufactures[name] = url
-        services, quality_control, certificates = 'problem', 'problem', 'problem'
-    
-    different_manufactures = {}
+    soup, services, quality_control, certificates  = must_get_page_source(url)
 
     #############################   order numbers and total amounts   #############################
     total_order_number = 'N/A'
