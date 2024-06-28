@@ -16,7 +16,6 @@ driver.get(url)
 wait = WebDriverWait(driver, 10)
 next_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "next-btn.next-btn-normal.next-btn-medium.next-pagination-item.next")))
 btm_element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "copyright")))
-# ActionChains(driver).move_to_element(next_button).perform()
 
 while next_button.is_enabled(): 
   page_count += 1
