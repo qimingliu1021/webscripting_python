@@ -1,200 +1,190 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-import datetime
-import time 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import os
+import time
+import datetime
 import csv
-import re
 
-# Setup Selenium WebDriver
-driver = webdriver.Edge()
+# Get all manufactures as [(manufacture_name_1, link_1), (manufacture_name_2, link_2), ...] from stored file
+def get_manufacture_from_dir(): 
+  manufactures_dir = '../apparel_manufactures'
+  manufacturers_name_url = []
+  for filename in os.listdir(manufactures_dir):
+    if filename.endswith('.html'):  # Ensures only HTML files are processed
+      # print(f"reading file: {filename}......")
+      filepath = os.path.join(manufactures_dir, filename)
+      with open(filepath, 'r', encoding='utf-8') as file:
+          content = file.read()
+          soup = BeautifulSoup(content, 'html.parser')
+          factory_cards = soup.find_all('div', class_='factory-card')
 
-directory = '../apparel_manufactures'
-manufacturers_name_url = []
+          for card in factory_cards:
+            detail_info = card.find('div', class_='detail-info')
+            if detail_info:
+              name_tag = detail_info.find('h3')
+              if name_tag and name_tag.find('a'):
+                manufacturer_name = name_tag.find('a').text.strip()  
+                manufacturer_link = name_tag.find('a')['href']       
+                manufacturers_name_url.append((manufacturer_name, manufacturer_link))
+  return manufacturers_name_url
+
+html_directory = 'htmls_single_extract'
+html_logs = 'logs_single_extract'
+html_dir = "html_0304_28"
+logs_dir = "log_0304_28"
 now = datetime.datetime.now()
 
-for filename in os.listdir(directory):
-  if filename.endswith('.html'):  # Ensures only HTML files are processed
-    # print(f"reading file: {filename}......")
-    filepath = os.path.join(directory, filename)
-    with open(filepath, 'r', encoding='utf-8') as file:
-        content = file.read()
-        soup = BeautifulSoup(content, 'html.parser')
-        factory_cards = soup.find_all('div', class_='factory-card')
+# Visit and get all info of all product from manufacture product page
+def get_product_dic(driver, manufacture_name):
+  # driver = webdriver.Edge()   # can get rid of for not too many additional pages
+  # driver.get(url)
+  with open(f"{logs_dir}/products_{now}.txt", "a") as f: 
+    f.write(f"Manufacture name: {manufacture_name}: \n")
+  wait = WebDriverWait(driver, 10)
+  next_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "next-btn.next-btn-normal.next-btn-medium.next-pagination-item.next")))
 
-        for card in factory_cards:
-          detail_info = card.find('div', class_='detail-info')
-          if detail_info:
-            name_tag = detail_info.find('h3')
-            if name_tag and name_tag.find('a'):
-              manufacturer_name = name_tag.find('a').text.strip()  
-              manufacturer_link = name_tag.find('a')['href']       
-              manufacturers_name_url.append((manufacturer_name, manufacturer_link))
+  # Each webpage imitate scrolling down to let each html fully load
+  stopping_point = [
+    "next-row.next-row-no-padding.next-row-justify-space-between.next-row-align-center.nav-content",
+    "next-icon.next-icon-arrow-down.next-icon-medium", 
+    "next-pagination-jump", 
+    "copyright"
+  ]
 
-detailed_manufacturers_data = []
+  # Need to set back to 0 for every new product
+  page_count = 0
+  product_count = 0
+  product_dic = {}
+  product_dic["manufacture_name"] = manufacture_name
 
-count = 1
+  while next_button.is_enabled(): 
+    page_count += 1
+    print(f"at page {page_count}......")
+    with open(f"{html_directory}/html_page_{page_count}.html", "a") as f:
+      f.write(f"On page {page_count}...\n")
+    for point_class in stopping_point: 
+      element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, point_class)))
+      ActionChains(driver).move_to_element(element).perform()
+      time.sleep(2)
+    next_button.click()
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    if soup.find('div', class_="component-product-list"):
+      component_product_list = soup.find('div', class_="component-product-list")
+      if component_product_list.find_all('div', class_='icbu-product-card vertical large product-item'): 
 
-all_service = ['minor customization', 'design-based customization', 'sample-based customization', 'full customization', 'agile supply chain', 'international warehouses', 'project solutions', 'project design capability', 'centralized procurement available', 'on-site installation', 'on-site technical support', 'one-stop procurement', '3d design capabilities', 'overseas partner factory']
-all_qc = ['raw-material traceability identification', 'finished product inspection', 'qa/qc inspectors', 'on-site material inspection', 'quality traceability', 'warranty available', 'testing instruments']
-html_directory = "htmls"
-log_directory = "logs"
+        # LOGGING: Store the HTML page to check if any errors
+        with open(f"{html_directory}/html_page_{page_count}.html", "w") as f: 
+          f.write(component_product_list.prettify())
 
-def categorize_capabilities(soup):
-    services = []
-    quality_control = []
-    certificates = []
+        img_containers = component_product_list.find_all('div', class_='icbu-product-card vertical large product-item')
+        
+        # Get all image containers at the current page
+        # two type of images class in the page: 1. icbu-product-card vertical large product-item last   2. icbu-product-card vertical large product-item
+        for with_last_img in component_product_list.find_all('div', class_='icbu-product-card vertical large product-item last'): 
+          img_containers.append(with_last_img)
+        print(f"find {len(img_containers)} images \n")
 
-    list_items = soup.select('.list-item:not(.no-select-text)')
-    for item in list_items:
+        # Get all information from every image container
+        for single_container in img_containers: 
+          product_count += 1
+          product_name = single_container.find('span', class_="title-con").text.strip() if single_container.find('span', class_="title-con") else -1
+          product_img_element = single_container.find("img", class_="react-dove-image")
+          if product_img_element and 'src' in product_img_element.attrs: 
+            product_img = "https:" + product_img_element['src']
+          else: 
+            product_img = -1
+          product_price = single_container.find("div", class_="price").text.strip() if single_container.find("div", class_="price") else -1
+          product_shipping = single_container.find("div", class_="freight-str").text.strip() if single_container.find("div", class_="freight-str") else -1
+          product_MOQ = single_container.find("div", "moq").text.strip()[12:20] if single_container.find("div", "moq") else -1
 
-        text = item.get_text(strip=True).lower()
-        found_service = False
-        for keyword in all_service:
-            if keyword in text:
-                services.append(keyword)
-                found_service = True
-                break  
+          product_dic[f'name_{product_count}'] = product_name
+          product_dic[f'image_link_{product_count}'] = product_img
+          product_dic[f'price_{product_count}'] = product_price 
+          product_dic[f'shipping_price_{product_count}'] = product_shipping
+          product_dic[f'MOQ_{product_count}'] = product_MOQ
 
-        if not found_service:
-            found_qc = False
-            for keyword in all_qc:
-                if keyword in text:
-                    quality_control.append(keyword)
-                    found_qc = True
-                    break  # Stop checking after the first match to avoid duplicates
+          # LOGGING: Logging each scripting to trace
+          with open(f"{logs_dir}/products_{now}.txt", "a") as f: 
+            f.write(f"product_{product_count} name: {product_name}\n")
+            f.write(f"product_{product_count} img link: {product_img}\n")
+            f.write(f"product_{product_count} price: {product_price}\n")
+            f.write(f"product_{product_count} shipping: {product_shipping}\n")
+            f.write(f"product_{product_count} MOQ: {product_MOQ} \n \n")
 
-            if not found_qc:
-                certificates.append(text)
-    
-    return services, quality_control, certificates
+    next_button = driver.find_element(By.CLASS_NAME, "next-btn.next-btn-normal.next-btn-medium.next-pagination-item.next")
+  driver.quit()
 
-
-def must_get_page_source(url): 
-    get_the_source = False
-    while not get_the_source: 
-        driver.get(url)
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        if soup.find('div', class_='module-verifiedProfile'): 
-            get_the_source = True
-        # when there's 404 page
-        if soup.find('div', 'info-404img'): 
-            services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
-            return soup, services, quality_control, certificates
-        # For different html layout
-        if soup.find('div', class_='icbu-mod-wrapper no-title icbu-pc-cpCompanyOverview false v2'): 
-            services, quality_control, certificates = ["problem"], ["problem"], ["problem"]
-            return soup, services, quality_control, certificates
-        time.sleep(5)
-    # Get the clicked page
-    all_tags_elements = driver.find_elements(By.CLASS_NAME, "all-tags")
-    all_tags_elements[0].click()
-    time.sleep(3)
-    soup_opened = BeautifulSoup(driver.page_source, 'html.parser')
-    with open(f"{html_directory}/{count}_click.html", "w") as file:
-        file.write(soup_opened.prettify())
-    
-    services, quality_control, certificates = categorize_capabilities(soup_opened)
-
-    with open(f"{html_directory}/{count}.html", "w") as file: 
-                file.write(soup.prettify())
-    
-    return soup, services, quality_control, certificates
+  return product_dic
 
 
-# Visit each manufacturer's page
-for name, url in manufacturers_name_url:
+def get_the_normal_manufacture(driver): 
+  soup = BeautifulSoup(driver.page_source, 'html.parser')
+  if soup.find('div', 'info-404img') or soup.find('div', class_='icbu-mod-wrapper no-title icbu-pc-cpCompanyOverview false v2'): 
+    return False
+  return True
 
-    ##############################           MONITORING 1            ##############################
-    print(f"\nmanufacture {count}: \n")
-    print(f"{name} please visit - {url}")
 
-    count += 1
-    # a switch - on/off to control the # number of manufactures
-    # if count == 10: 
-    #     break;
-
-    ##############################      Accessing the website        ##############################
-    
-    soup, services, quality_control, certificates  = must_get_page_source(url)
-
-    #############################   order numbers and total amounts   #############################
-    total_order_number = 'N/A'
-    total_order_dollar = 'N/A'
-    ability_container = soup.find('div', class_='ability-container')
-    if ability_container: 
-        order_info = {li.find('div', class_='title').text: li.find('strong').text for li in ability_container.find_all('li')}
-        for key, value in order_info.items():
-            if 'orders' in key:
-                total_order_number = key.split()[0]
-                total_order_dollar = re.sub(r'[^\d+]', '', value)
-    
-    #############################         Main categories           ###############################
-    main_categories = ""
-    soup_company_info = soup.find('div', class_='company-info')
-    if soup_company_info:
-        spans = soup_company_info.find_all('span')
-        for span in spans:
-            if 'Main categories' in span.text:
-                main_categories = span.text.split(":")[1].rstrip(".").replace(" / ", ", ").strip()
-                break
-
-    #############################          writing data             ################################
-    data = {
-        'Name':                         name,
-        'URL':                          url,
-        'Location':                     soup.find('div', class_='company-info').find('span').text.strip() if soup.find('div', class_='company-info') else 'N/A',
-        'Score':                        soup.find('span', class_='score-text').text.strip() if soup.find('span', class_='score-text') else 'N/A',
-        'Reviews':                      soup.find('a', class_='reviews-num').text.strip() if soup.find('a', class_='reviews-num') else 'N/A',
-        "Main Categories":              main_categories,
-        'Average Response Time':        soup.find('div', string='average response time').find_next('strong').text if soup.find('div', string='average response time') else 'N/A',
-        'On time Delivery Rate':        soup.find('div', string='on-time delivery rate').find_next('strong').text if soup.find('div', string='on-time delivery rate') else 'N/A',
-        "Total Orders so far":          total_order_number, 
-        'Total Order Amount':           total_order_dollar,
-        ##########################################    what is working on    ########################################## 
-        'Services':                     services,
-        'Quality Control':              quality_control,
-        'Certificates':                 certificates,
-        'Floor Space (㎡)':             soup.find(string='Floor space(㎡)').find_next('strong').text.strip() if soup.find(string='Floor space(㎡)') else 'N/A',
-        'Annual Export Revenue (USD)':  soup.find(string='Annual export revenue (USD)').find_next('strong').text.strip() if soup.find(string='Annual export revenue (USD)') else 'N/A',
-        'Production Lines':             soup.find(string='Production lines').find_next('strong').text.strip() if soup.find(string='Production lines') else 'N/A',
-        'Total Annual Output (Units)':  soup.find(string='Total annual output (units)').find_next('strong').text.strip() if soup.find(string='Total annual output (units)') else 'N/A',
-        'Production Machines':          soup.find(string='Production machines').find_next('strong').text.strip() if soup.find(string='Production machines') else 'N/A',
-        'Quality Control on All Lines': soup.find(string='Quality control conducted on all production lines').find_next('strong').text.strip() if soup.find(string='Quality control conducted on all production lines') else 'N/A',
-        'QA/QC Inspectors':             soup.find(string='QA/QC inspectors').find_next('strong').text.strip() if soup.find(string='QA/QC inspectors') else 'N/A',
-        'Main Markets':                 soup.find(string='Main markets').find_next('strong').text.strip() if soup.find(string='Main markets') and soup.find(string='Main markets').find_next('strong') else 'N/A',
-        'Supply Chain Partners':        soup.find(string='Supply chain partners').find_next('strong').text.strip() if soup.find(string='Supply chain partners') else 'N/A',
-        'Main Client Types':            soup.find(string='Main client types').find_next('strong').text.strip() if soup.find(string='Main client types') and soup.find(string='Main client types').find_next('strong') else 'N/A',
-        'Customization Options':        soup.find(string='Customization options').find_next('strong').text.strip() if soup.find(string='Customization options') else 'N/A',
-        'New Products Launched Last Year': soup.find(string='New products launched in last year').find_next('strong').text.strip() if soup.find(string='New products launched in last year') else 'N/A',
-        'R&D Engineers':                soup.find(string='R&D engineers').find_next('strong').text.strip() if soup.find(string='R&D engineers') else 'N/A',
-    }
-
-    detailed_manufacturers_data.append(data)
-
-    ####################################  MONITORING 2  ####################################
-    with open(f"{log_directory}/log_{now}.txt", "a") as file: 
-        file.write(f"\nManufacture {count}......")
-        for key, value in data.items(): 
-            file.write(f"{key}: {value}\n")
-        file.write("\n \n")
-    print("relevant parameters: ")
-    print("Services: ", data['Services'])
-    print("Quality Control ", data['Quality Control'])
-    print("Certificates: ", data['Certificates'])
-    print("\n")
-
-driver.quit()
-
-# Write to CSV
-with open(f'manufacturers_data_{now}.csv', 'w', newline='', encoding='utf-8') as csvfile:
-    fieldnames = list(detailed_manufacturers_data[0].keys())
+def writing_to_csv(path_to_write, dict_to_write): 
+  with open(path_to_write, "w") as csvfile: 
+    fieldnames = list(dict_to_write.keys())
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
-    for data in detailed_manufacturers_data:
-        data['Services'] = ', '.join(data['Services'])
-        data['Quality Control'] = ', '.join(data['Quality Control'])
-        data['Certificates'] = ', '.join(data['Certificates'])
-        writer.writerow(data)
+
+  with open(path_to_write, "a") as csvfile: 
+    fieldnames = list(dict_to_write.keys())
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writerow(dict_to_write)
+  # LOGGING
+  with open(f"{logs_dir}/products_{now}.txt", "a") as f: 
+    f.write(f"product dic is: {dict_to_write} \n")
+    f.write(f"field name is: {fieldnames} \n")
+
+
+# Get manufactures from csv file
+csv_dir = 'manufactures.csv'
+csv_picture_dir = f'manufactures_pictures_{now}.csv'
+
+with open(csv_dir, "r") as csvfile: 
+  next(csvfile)
+  reader = csv.reader(csvfile, delimiter=',')       # get the rest of row each time
+  with open(f"{logs_dir}/products_{now}.txt", "a") as f: 
+    f.write(f"existing column info: {reader} \n")
+  count = 0
+  # Get the link for current manufactures one by one
+  for row in reader: 
+    count += 1
+    if count > 4: 
+      break
+    manufacture_name = row[0]
+    link_to_visit = row[1]
+    # navigate to the product page
+    driver = webdriver.Edge()
+    driver.get(link_to_visit)
+    if not get_the_normal_manufacture(driver): 
+      continue
+    # scrolling down a bit
+    wait = WebDriverWait(driver, 10)
+    stopping_point = [
+      "module-verifiedAllProducts", 
+      "verified-all-button",
+      ]
+    for point_class in stopping_point: 
+      element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, point_class)))
+      ActionChains(driver).move_to_element(element).perform()
+      time.sleep(2)
+    parent_element = driver.find_element(By.CLASS_NAME, "module-verifiedAllProducts")
+    view_more_button = parent_element.find_elements(By.CLASS_NAME, "verified-all-button")
+    view_more_button[0].click()
+    
+    # Get the manufacture product infos and write them in dictionary
+    product_dic = get_product_dic(driver, manufacture_name=manufacture_name)    
+
+    # Writing to csv file...
+    writing_to_csv(csv_picture_dir, product_dic)    
+
+
 
