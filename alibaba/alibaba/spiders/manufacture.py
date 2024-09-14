@@ -34,6 +34,8 @@ class ManufactureSpider(scrapy.Spider):
         # chrome_options.add_argument("--headless")  # Run in headless mode
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-software-rasterizer")
         
         self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
 
@@ -126,15 +128,19 @@ class ManufactureSpider(scrapy.Spider):
                 EC.visibility_of_element_located((By.CLASS_NAME, "tags-dialog"))
             )
         except TimeoutException: 
-            captcha = self.driver.find_element(By.XPATH, "//*[@id='baxia-punish']/div[2]/div/div[1]/div[2]/div")
-            if captcha: 
-                print("!!!!!!!!!!!!!!!!!!!!!!!!! CAPTCHA VERIFICATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                print("current PROXY: ")
-                print("current LOCATION: trying to visit 'all-tags'")
-                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            else: 
-                print("Other situations for timeout. Not because captcha")
-            
+            try: 
+                captcha = self.driver.find_element(By.XPATH, "//*[@id='baxia-punish']/div[2]/div/div[1]/div[2]/div")
+                if captcha: 
+                    print("!!!!!!!!!!!!!!!!!!!!!!!!! CAPTCHA VERIFICATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    print("current PROXY: ")
+                    print("current LOCATION: trying to visit 'all-tags'")
+                    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                else: 
+                    print("Other situations for timeout. Not because captcha")
+            except Exception as e: 
+                print("Other time out issue")
+
+
         dialog_content = self.driver.find_element(By.CLASS_NAME, "tags-dialog").get_attribute('innerHTML')
         dialog_tree = etree.HTML(dialog_content)
         services = dialog_tree.xpath("//div[contains(@class, 'list') and contains(.//span, 'Service')]//div[contains(@class, 'list-item') and not(contains(@class, 'no-select-text'))]//span[@class='hover-span']/text()")

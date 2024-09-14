@@ -7,6 +7,11 @@ import json
 from scrapy import signals
 import logging
 import requests
+import urllib3
+
+# Disable urllib3 logging
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 # useful for handling different item types with a single interface
 # from itemadapter import is_item, ItemAdapter
