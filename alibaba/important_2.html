@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>EcoNet</title>
+  </head>
+
+  <body>
+    <script>
+      // 监听来自主域的消息
+      const loggerPrefix = 'EcoNET-IFrame:';
+      const NetworkGrade = ['SNW', 'NNW'];
+      const CookieName = 'NWG';
+
+      window.addEventListener('message', function (event) {
+        // 检查消息来源是否安全, 如果来源 origin 里面没有 alibaba 或者 alicdn ，则 return
+        if (!event.origin.includes('alibaba') && !event.origin.includes('alicdn')) {
+          return;
+        }
+        // 处理接收到的网络等级信息
+        const networkGrade = event.data;
+        const { key, value } = networkGrade;
+        if (key !== CookieName) {
+          // 如果接收到的消息不是网络等级信息，则 return
+          return;
+        }
+        console.debug(loggerPrefix, 'Received network grade:', networkGrade);
+        if (NetworkGrade.includes(value)) {
+          setCookie(key, value);
+          // 处理完成后，发送响应回主域
+          event.source.postMessage('Network grade received and processed', event.origin);
+        } else {
+          console.error(loggerPrefix, 'Invalid network grade:', networkGrade);
+        }
+      });
+
+      function setCookie(key, value) {
+        const expires = new Date();
+        expires.setFullYear(expires.getFullYear() + 1);
+        const userAgent = navigator.userAgent.toLowerCase();
+        const chromiumPattern = /chrome|chromium|crios/;
+        const versionPattern = /(?:chrome|chromium|crios)\/(\d+)/;
+        let isChromiumBased = chromiumPattern.test(userAgent);
+        let chromiumVersion = isChromiumBased ? parseInt(userAgent.match(versionPattern)[1]) : 0;
+
+        // 准备Partitioned和非Partitioned cookie字符串
+        let cookieStr = `${key}=${value}; path=/; domain=s.alicdn.com; expires=${expires.toUTCString()}; Secure; SameSite=None`;
+        let clearCookieStr = `${key}=; path=/; domain=s.alicdn.com; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None`;
+
+        // 如果是Chromium基础浏览器并且版本大于等于118
+        if (isChromiumBased && chromiumVersion >= 118) {
+          cookieStr += '; Partitioned';
+          // 清除同名的非Partitioned cookie
+          document.cookie = clearCookieStr;
+        }
+
+        // 设置新的cookie
+        document.cookie = cookieStr;
+      }
+    </script>
+  </body>
+</html>
