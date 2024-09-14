@@ -12,16 +12,6 @@ from scrapy import signals
 
 class AlibabaPipeline:
 
-    # keys = [
-    #     "name", "link", "location", "score", "reviews", "average_response_time", 
-    #     "on_time_delivery_rate", "total_orders_so_far", "total_order_amount", "services", "quality_controls", "certifications", 
-    #     "floor_space", "annual_export_revenue", "production_lines", 
-    #     "production_machines", "total_annual_output", "quality_control_on_all_lines", 
-    #     "qa_qc_inspectors", "main_markets", "main_client_types", 
-    #     "customization_options", "new_products_launched_last_year", 
-    #     "r_d_engineers"
-    # ]
-
     keys = [
         "Name", "URL", "Location", "Score", "Reviews", "Main Categories", 
         "Average Response Time", "On time Delivery Rate", "Total Orders so far", 
