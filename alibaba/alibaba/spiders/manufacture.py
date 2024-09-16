@@ -18,7 +18,6 @@ import logging
 # Set logging level to WARNING
 logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.WARNING)
 
-
 class ManufactureSpider(scrapy.Spider):
     name = "manufacture"
     allowed_domains = ["alibaba.com"]
@@ -129,7 +128,7 @@ class ManufactureSpider(scrapy.Spider):
         r_d_engineers = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'engineers')]/strong/text()").get(default="-1")
 
         # Obtain product page link
-
+        
 
         # execute js again for "See all verified capabilities (12)"
         WebDriverWait(self.driver, 10).until(
@@ -202,7 +201,6 @@ class ManufactureSpider(scrapy.Spider):
             print(f"{key}: {item.get(key)}")
         yield item
         # print("\n-------------- END OF parse_with_selenium() ... -------------- \n")
-
 
     def closed(self, reason):
         # Close the browser when the spider finishes
