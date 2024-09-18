@@ -21,12 +21,12 @@ logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(loggin
 
 class ManufactureGroupOneSpider(scrapy.Spider):
     name = "manufacture_group_3"
+    csv_store_base = "data_group_3"
+    csv_path = "gruop_3"
     allowed_domains = ["alibaba.com"]
     now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_count = 1
     begin_time = datetime.datetime.now()
-    csv_store_base = "data_group_3"
-    csv_path = "gruop_3"
     log_store = os.makedirs("LOGS", exist_ok=True)
     log_store = "LOGS"
     current_manufacture_name = ""
@@ -107,8 +107,10 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         location = response.xpath("//div[@class='company-info']/span/text()").get(default=-1)
 
         main_category = response.xpath("//div[@class='company-info']/span[contains(text(), 'Main categories')]/text()").get(default=-1)
-        if main_category != -1 and len(main_category) > 70 and "..." in main_category:
-            main_category = main_category[19:70].rsplit(' ', 1)[0]
+        re_scrape = False
+        if main_category != -1 and "..." in main_category:
+            re_scrape = True
+            main_category = main_category[17:].rsplit(' ', 1)[0]
         print("main category: ", main_category)
 
         score = response.xpath("//span[@class='score-text']/text()").get(default=-1)
@@ -188,16 +190,17 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         
         self.driver.get(base_url)
         
-        try:
-            # Select the element containing the 'Main categories' text
-            main_category_element = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]")
-            main_category_text = main_category_element.text
-            time.sleep(2)
-            print(f"Main category: {main_category_text}")
-        except TimeoutException: 
-            print(f"Main category remains the same for {name}")
-        except NoSuchElementException: 
-            print(f"Main category remains the same for {name}")
+        if re_scrape:
+            try:
+                main_category_element = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]")
+                main_category = main_category_element.text
+                main_category[17:]
+                time.sleep(2)
+                print(f"Main category: {main_category}")
+            except TimeoutException: 
+                print(f"Main category remains the same for {name}")
+            except NoSuchElementException: 
+                print(f"Main category remains the same for {name}")
 
         item = ManufactureItem(
             name=name, 
@@ -205,6 +208,7 @@ class ManufactureGroupOneSpider(scrapy.Spider):
             location=location,
             score=score,
             reviews=reviews_number,
+            main_category=main_category,
             average_response_time=average_response_time,
             on_time_delivery_rate=on_time_delivery_rate_decimal,
             total_orders_so_far=total_orders_so_far_number,

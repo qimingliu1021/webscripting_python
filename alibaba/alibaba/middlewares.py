@@ -8,6 +8,7 @@ from scrapy import signals
 import logging
 import requests
 import urllib3
+from fake_useragent import UserAgent
 
 # Disable urllib3 logging
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -176,4 +177,24 @@ class ProxyMiddleware(object):
         return cls(
             proxy_url=settings.get('PROXY_URL')
         )
+
+
+class RandomUserAgentMidddlware(object):
+    def __init__(self, crawler):
+        super(RandomUserAgentMidddlware, self).__init__()
+        self.ua = UserAgent()
+        self.ua_type = crawler.settings.get('RANDOM_UA_TYPE', 'random')
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+    def process_request(self, request, spider):
+        def get_ua():
+            print(f"UA obtained: {self.ua}, type is: {self.ua_type}")
+            return getattr(self.ua, self.ua_type)
+
+        request.headers.setdefault('User-Agent', get_ua())
+
+
 
