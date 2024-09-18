@@ -1,0 +1,229 @@
+<script>
+    window._assetsDomain = 's.alicdn.com/@g';
+    window._PAGE_DATA_ = {
+        "pathSpms": {
+            "productgrouplist": {
+                "path": "productgrouplist",
+                "realPath": "productgrouplist",
+                "spmA": "a2700",
+                "spmB": "shop_pl"
+            },
+            "other": {
+                "path": "other",
+                "realPath": "other",
+                "spmA": "a2700",
+                "spmB": "shop_oth"
+            },
+            "contacts.htm": {
+                "path": "contacts.htm",
+                "realPath": "contactinfo.html",
+                "spmA": "a2700",
+                "spmB": "shop_co"
+            },
+            "products.htm": {
+                "path": "products.htm",
+                "realPath": "productlist.html",
+                "spmA": "a2700",
+                "spmB": "shop_pl"
+            },
+            "productShowcase": {
+                "path": "productShowcase",
+                "realPath": "productShowcase",
+                "spmA": "a2700",
+                "spmB": "shop_plfe"
+            },
+            "index.htm": {
+                "path": "index.htm",
+                "realPath": "index.html",
+                "spmA": "a2700",
+                "spmB": "shop_index"
+            },
+            "video.htm": {
+                "path": "video.htm",
+                "realPath": "video.html",
+                "spmA": "a2700",
+                "spmB": "shop_video"
+            },
+            "productgrouplist.htm": {
+                "path": "productgrouplist.htm",
+                "realPath": "productgrouplist.htm",
+                "spmA": "a2700",
+                "spmB": "shop_plgr"
+            },
+            "homeSearch": {
+                "path": "homeSearch",
+                "realPath": "homeSearch",
+                "spmA": "a2700",
+                "spmB": "shop_plser"
+            },
+            "promotionPage.htm": {
+                "path": "promotionPage.htm",
+                "realPath": "promotionPage.html",
+                "spmA": "a2700",
+                "spmB": "shop_prom"
+            },
+            "companyProfile.htm": {
+                "path": "companyProfile.htm",
+                "realPath": "company_profile.html",
+                "spmA": "a2700",
+                "spmB": "shop_cp"
+            },
+            "feeds.htm": {
+                "path": "feeds.htm",
+                "realPath": "feeds.html",
+                "spmA": "a2700",
+                "spmB": "shop_feeds"
+            },
+            " member.htm": {
+                "path": " member.htm",
+                "realPath": "member.html",
+                "spmA": "a2700",
+                "spmB": "shop_mem"
+            }
+        },
+        "csrf_token": "b8cf35b8-6747-405f-af61-c42f453ad810",
+        "globalData": {
+            "templateType": "official",
+            "backgroundImage": {
+                "repeat": "repeat",
+                "display": "none",
+                "position": "top left",
+                "backImage": "//sc02.alicdn.com/kf/Hd8e93a8f01d3427e8da076930dc52d91A.png"
+            },
+            "bizCode": "icbu-esite-gold",
+            "aliMemberEncryptId": "IDX1WS3Pawr1AUDACaM16T4SCCl8Z64K158E29qaPPsxeqnHNiyTR1qV9U7iB_P4S-mL",
+            "encryptAccountId": "IDX1qLCyyHrG8ci8bKaGhOmPCQw_9hxNQoJhlK9MAVngLKbkCD07buo2jV-4eZG-GTPA",
+            "isGold": true,
+            "aliMemberId": 220720202,
+            "title": "Company Profile",
+            "pageName": "旺铺2.0CP",
+            "isGray": true,
+            "liveInStore": {
+                "fieldName": "liveInStore"
+            },
+            "aliId": {
+                "fieldName": "aliId",
+                "value": 1988623886
+            },
+            "pageType": 89,
+            "bizId": -1000032,
+            "companyEncryptId": "IDX1FaPNx9KMgwpzcaTfdm1I02zi7R5U2btwnGzxy-Xu4L6Ll3iS1uPqfzut3yykeO8G",
+            "isHideContactEntrance": {
+                "fieldName": "isHideContactEntrance",
+                "value": false
+            },
+            "lang": "en",
+            "backgroundColor": "#f7f7f7",
+            "leaderSupplier": {
+                "fieldName": "leaderSupplier",
+                "value": false
+            },
+            "buckets": ["speed_concurrent", "show_map", "new_render_module", "use_new_video_player", "pc_new_sort", "show_tag_video"],
+            "encodeAlitalkId": "8pctgRBMALP1W7rqCY16hA==",
+            "pageId": 5127243001,
+            "esiteSubDomain": {
+                "fieldName": "esiteSubDomain",
+                "value": "textileframe.en.alibaba.com"
+            },
+            "companyId": 230728880,
+            "chatToken": {
+                "fieldName": "chatToken",
+                "value": "cERMNzl1WlVEVzFHcjE1K3NzRWZPbWh3am8xWmpTTnh2QzJaalVFSE1ZcDlCbjRJSHlpNXdIZmI3RVFrQVR4N2xYWmg4MHV2Z2UwUTNhSWk2MWNGS2ozZGtOb1ordWw4c29aQlFjdC9DdENJTzh1clpMNGtJZWs4SHd4NkdrcksmdmVyc2lvbj0xLjAuMA=="
+            },
+            "designInfo": "{\"templateType\":0,\"isvName\":\"菘蓝\"}",
+            "siteId": 5009253001,
+            "selfSupportShopTag": false,
+            "phantBucketName": "speed_concurrent,show_map,new_render_module,use_new_video_player,pc_new_sort,show_tag_video"
+        },
+        "userGlobalData": {
+            "backgroundStyle": {
+                "backgroundColor": "#f7f7f7",
+                "backgroundImage": {
+                    "display": "none",
+                    "repeat": "repeat",
+                    "position": "top left",
+                    "backImage": "//sc02.alicdn.com/kf/Hd8e93a8f01d3427e8da076930dc52d91A.png"
+                }
+            }
+        }
+    };
+    try {
+        document.domain = "alibaba.com"
+    } catch (e) {}
+    </script>
+    <script>
+    window.pageConfig = {
+        env_mode: 'product',
+        host_token: 'V1ZqObAra9m4IN8YX4C/jzJfyo8QLoBA7P2C6dj/eLVLO182FhAMHYuXPavNyfCmUwrUHJcihBiRSVdHGmRzA9Rw==',
+        language: 'en_US'
+    }
+    </script>
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+<script>
+    window.__promotion_config__ = [{
+        "nicheCode": "ICBU_PC_ATOMOS_ESITE_SHOP_FOR",
+        "nicheMaterialList": [{
+            "pcHigh": "45",
+            "imageProducts": "https:\/\/s.alicdn.com\/@img\/imgextra\/i4\/O1CN01Xt4rje1w9QKVzNB6S_!!6000000006265-2-tps-3084-90.png?tracelog=20240912_ICBU_PC_ATOMOS_ESITE_SHOP_FOR__T",
+            "appHigh": "160",
+            "imageAPPHome": "",
+            "imageHome": "https:\/\/s.alicdn.com\/@img\/imgextra\/i4\/O1CN01Xt4rje1w9QKVzNB6S_!!6000000006265-2-tps-3084-90.png?tracelog=20240912_ICBU_PC_ATOMOS_ESITE_SHOP_FOR__T",
+            "atom": "8000003180502"
+        }]
+    }, {
+        "nicheCode": "ICBU_PC_ATOMOS_ESITE_TITLE_ICON",
+        "nicheMaterialList": [{
+            "image": "https:\/\/gw.alicdn.com\/imgextra\/i3\/O1CN01s1DGzt1CPTmRJtZXo_!!6000000000073-2-tps-120-48.png?tracelog=20240912_ICBU_PC_ATOMOS_ESITE_TITLE_ICON__T",
+            "pcHigh": "16",
+            "imageMobile": "https:\/\/gw.alicdn.com\/imgextra\/i3\/O1CN01s1DGzt1CPTmRJtZXo_!!6000000000073-2-tps-120-48.png?tracelog=20240912_ICBU_PC_ATOMOS_ESITE_TITLE_ICON__T",
+            "appHigh": "15",
+            "atom": "8000003180503"
+        }]
+    }]
+    </script>
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+<script>
+    window._globalConfig_ = {
+        perfConfig: {
+            bbScript: "//s.alicdn.com/@g/big-brother/sentry/3.x/index.js",
+            inputDelayLimit: 550
+        },
+        _deferAssets_: {
+            css: ["//s.alicdn.com/@g/bc/ggs-pop-ads/minisite.css", "//s.alicdn.com/@g/ife/shop-toolbar/0.1.5/index.css"],
+            js: ["//s.alicdn.com/@g/bc/ggs-pop-ads/minisite.js", "//s.alicdn.com/@g/ife/shop-toolbar/0.1.5/index.js"]
+        }
+    };
+    try {
+        window.__BB = {
+            mode: -1,
+            scene: ""
+        };
+        if (window._PAGE_DATA_.globalData.templateType === "isv") {
+            window.__BB.scene = "icbu_shop_index_isv";
+        } else {
+            var body = document.querySelector("body");
+            var dataSpm = body.getAttribute("data-spm");
+            var spmSceneMap = {
+                shop_index: "icbu_shop_index",
+                shop_pl: "icbu_shop_pl",
+                shop_plser: "icbu_shop_pl",
+                shop_plgr: "icbu_shop_pl",
+                shop_cp: "icbu_shop_cp",
+                shop_co: "icbu_shop_co",
+                shop_fac: "icbu_shop_fac"
+            };
+            if (spmSceneMap[dataSpm]) {
+                window.__BB.scene = spmSceneMap[dataSpm];
+            }
+        }
+    } catch (e) {
+        console.error("BB scene set error", e);
+    }
+    window.GDPR_NOTICE_CONFIG = {
+        needShow: false
+    };
+    </script>
