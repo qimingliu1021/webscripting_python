@@ -122,41 +122,37 @@ class ProxyMiddleware(object):
  
     # 获取随机代理IP
     def get_random_proxy(self):
-        print("\n-------------- START OF get_random_proxy() -------------- \n")
+        # print("\n-------------- START OF get_random_proxy() -------------- \n")
         try:
             response = requests.get(self.proxy_url)
-            print(f"Getting a proxy from http://127.0.0.1:5010/get. Response is {response.text}")
             if response.status_code == 200:
                 global proxy
                 p = json.loads(response.text)
                 proxy = "http://" + "{}".format(p.get('proxy'))
                 ip = {"http": proxy, "https": proxy}
                 r = requests.get("https://betteractive.en.alibaba.com/factory.html", proxies=ip, timeout=60)
-                print(f"Getting requests from baidu, response is {r}")
-                print(f"response status code is {r.status_code}")
+                # print(f"Getting requests from one alibaba website, response is {r}")
+                # print(f"response status code is {r.status_code}")
                 if r.status_code == 200:
-                    print(f"proxy works, using: {proxy}")
-                    print("\n-------------- END OF get_random_proxy() -------------- \n")
+                    print(f"Get the proxy: {proxy}...")
                     return proxy
             else:
                 print(f"Can't get proxy from {self.proxy_url}")
                 return self.get_random_proxy()
         except Exception as e: 
-            print("get_random_proxy() try failed. error is: \n", e)
-            print("Trying again")
+            # print(f"get_random_proxy() failed in getting response from {self.proxy_url}. error is: \n", e)
             return self.get_random_proxy()
  
     def process_request(self, request, spider):
-        print("\n-------------- START OF MIDWARE process_request() -------------- \n")
+        # print("\n-------------- START OF MIDWARE process_request() -------------- \n")
         proxy = self.get_random_proxy()
-        print(f"proxy is: {proxy}")
+        # print(f"proxy is: {proxy}")
         if proxy:
             self.logger.debug('======' + '使用代理 ' + str(proxy) + "======")
             request.meta['proxy'] = proxy
-            print("\n-------------- END OF MIDWARE process_request() -------------- \n")
  
     def process_response(self, request, response, spider):
-        print("\n-------------- START OF MIDWARE process_response() -------------- \n")
+        # print("\n-------------- START OF MIDWARE process_response() -------------- \n")
         if response.status != 200:
             print(f"response.status not obtained, returning request: {request}\n")
             request.meta['proxy'] = proxy

@@ -17,8 +17,8 @@ class ManufactureItem(scrapy.Item):
     total_orders_so_far = scrapy.Field()
     total_order_amount = scrapy.Field()
     services = scrapy.Field()  
-    quality_controls = scrapy.Field()
-    certifications = scrapy.Field() 
+    quality_control = scrapy.Field()
+    certificates = scrapy.Field() 
     floor_space = scrapy.Field()  
     annual_export_revenue = scrapy.Field()
     production_lines = scrapy.Field()  
@@ -32,11 +32,6 @@ class ManufactureItem(scrapy.Item):
     new_products_launched_last_year = scrapy.Field()
     r_d_engineers = scrapy.Field()  
 
-
-class VerifiedCapabilitiesItem(scrapy.Item): 
-    service = scrapy.Field()
-    quality_control = scrapy.Field()
-    certificates = scrapy.Field()
 
 class ManufactureProductItem(scrapy.Item):
     product_name = scrapy.Field()       # //div[@class='component-product-list']//span[@class='title-con']
