@@ -25,8 +25,8 @@ class ManufactureSpider(scrapy.Spider):
     now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_count = 1
     begin_time = datetime.datetime.now()
-    csv_store_base = "data_group_1"
-    csv_path = "gruop_1"
+    csv_store_base = "data_group_3"
+    csv_path = "gruop_3"
     log_store = os.makedirs("LOGS", exist_ok=True)
     log_store = "LOGS"
     current_manufacture_name = ""

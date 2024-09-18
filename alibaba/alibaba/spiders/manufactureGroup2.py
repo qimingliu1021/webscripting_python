@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import datetime
 from lxml import etree
+from urllib.parse import urlparse
 from alibaba.items import ManufactureItem
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -12,24 +13,25 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import logging
 
 # Set logging level to WARNING
 logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.WARNING)
 
-class ManufactureGroupTwoSpider(scrapy.Spider):
-    name = "manufacture_group_two"
+class ManufactureSpider(scrapy.Spider):
+    name = "manufacture"
     allowed_domains = ["alibaba.com"]
     now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_count = 1
     begin_time = datetime.datetime.now()
     csv_store_base = "data_group_2"
-    csv_path = "manufacture_group_2"
+    csv_path = "gruop_2"
     log_store = os.makedirs("LOGS", exist_ok=True)
     log_store = "LOGS"
     current_manufacture_name = ""
     csv_directories = []
+    chrome_options = webdriver.ChromeOptions()
 
 
     def __init__(self):
@@ -42,14 +44,14 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
             raise ValueError("No valid directories found under 'data/' except 'LOGS'.")
 
         # Initialize Selenium WebDriver (Chrome)
-        chrome_options = webdriver.ChromeOptions()
+        self.chrome_options = webdriver.ChromeOptions()
         # chrome_options.add_argument("--headless")  # Run in headless mode
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--disable-software-rasterizer")
+        self.chrome_options.add_argument("--no-sandbox")
+        self.chrome_options.add_argument("--disable-dev-shm-usage")
+        self.chrome_options.add_argument("--disable-gpu")
+        self.chrome_options.add_argument("--disable-software-rasterizer")
         
-        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
 
 
     def start_requests(self): 
@@ -63,7 +65,7 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
             df = pd.read_csv(self.csv_path)
             for index, row in df.iterrows(): 
                 self.file_count += 1
-                time.sleep(3)
+                time.sleep(2)
                 link = row['link']
                 print(f"------------------------------------------")
                 print(f"Time begins: {self.begin_time}, \nTime now: {datetime.datetime.now()}")
@@ -75,7 +77,20 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
 
     def parse_with_selenium(self, response):
 
+        proxy = response.meta.get('proxy')
+        if proxy:
+            print(f"Using proxy: {proxy}")
+        else:
+            print("No proxy is being used for this request.")
+
         url = response.url
+        
+        parsed_url = urlparse(url)
+
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        print("base_url: ", base_url)
+
+        self.chrome_options.add_argument('--proxy-server=%s' % proxy)
 
         self.driver.get(response.url)
         
@@ -90,6 +105,12 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
 
         name = response.xpath("//div[@class='shop-sign']//h1/text()").get(default=-1)
         location = response.xpath("//div[@class='company-info']/span/text()").get(default=-1)
+
+        main_category = response.xpath("//div[@class='company-info']/span[contains(text(), 'Main categories')]/text()").get(default=-1)
+        if main_category != -1 and len(main_category) > 70 and "..." in main_category:
+            main_category = main_category[19:70].rsplit(' ', 1)[0]
+        print("main category: ", main_category)
+
         score = response.xpath("//span[@class='score-text']/text()").get(default=-1)
         
         reviews = response.xpath(".//div[@class='rating-container']/a/text()").get(default=-1)
@@ -133,7 +154,7 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
         new_products_launched_last_year = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'launched')]/strong/text()").get(default="-1")
         r_d_engineers = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'engineers')]/strong/text()").get(default="-1")
 
-        # Obtain product page link
+        # Obtain main category link
 
         # execute js again for "See all verified capabilities (12)"
         WebDriverWait(self.driver, 10).until(
@@ -141,10 +162,7 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
         )
         view_capabilities_button = self.driver.find_element(By.CLASS_NAME, "all-tags")
         view_capabilities_button.click()
-        time.sleep(1)
-        # WebDriverWait(self.driver, 10).until(
-        #     EC.visibility_of_element_located((By.CLASS_NAME, "tags-dialog"))
-        # )
+        time.sleep(2)
 
         dialog_content = self.driver.find_element(By.CLASS_NAME, "tags-dialog").get_attribute('innerHTML')
         print(dialog_content[1])
@@ -152,16 +170,40 @@ class ManufactureGroupTwoSpider(scrapy.Spider):
 
         # print("dialog_content: \n", dialog_content)
         services = dialog_tree.xpath("//span[text()='Service']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
-        print("------------------- obtained by dialog_tree.xpath ---------------")
-        print("services: ", services)
+        # print("------------------- obtained by dialog_tree.xpath ---------------")
+        # print("services: ", services)
         quality_control = dialog_tree.xpath("//span[text()='Quality control']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
-        print("quality_controls: ", quality_control)
+        # print("quality_controls: ", quality_control)
         certificates = dialog_tree.xpath("//span[text()='Certifications']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
 
         # If any of these are empty, return -1 as a fallback
         services = ", ".join(services) if services else "-1"
         quality_control = ", ".join(quality_control) if quality_control else "-1"
         certificates = ", ".join(certificates) if certificates else "-1"
+
+        # self.driver.execute_script("window.open('');")
+        # self.driver.switch_to.window(self.driver.window_handles[1])
+        # self.driver.get(base_url)
+
+        try:
+            close_button = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//a[@class='next-dialog-close']"))
+            )
+            close_button.click()
+            print("Dialog closed successfully.")
+        except Exception as e:
+            print(f"Failed to close the dialog: {e}")
+        
+        self.driver.get(base_url)
+        
+        try:
+            main_category = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]/text()")
+            time.sleep(2)
+            print(f"Main category: {main_category.text}")
+        except TimeoutException: 
+            print(f"Main category remains the same for {name}")
+        except NoSuchElementException: 
+            print(f"Main category remains the same for {name}")
 
         item = ManufactureItem(
             name=name, 
