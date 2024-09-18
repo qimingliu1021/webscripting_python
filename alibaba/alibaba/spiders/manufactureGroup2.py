@@ -19,8 +19,8 @@ import logging
 # Set logging level to WARNING
 logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.WARNING)
 
-class ManufactureSpider(scrapy.Spider):
-    name = "manufacture"
+class ManufactureGroupOneSpider(scrapy.Spider):
+    name = "manufacture_group_2"
     allowed_domains = ["alibaba.com"]
     now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_count = 1
@@ -156,16 +156,12 @@ class ManufactureSpider(scrapy.Spider):
 
         # Obtain main category link
 
-        # execute js again for "See all verified capabilities (12)"
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "all-tags"))
-        )
         view_capabilities_button = self.driver.find_element(By.CLASS_NAME, "all-tags")
         view_capabilities_button.click()
         time.sleep(2)
 
         dialog_content = self.driver.find_element(By.CLASS_NAME, "tags-dialog").get_attribute('innerHTML')
-        print(dialog_content[1])
+        print(dialog_content)
         dialog_tree = etree.HTML(dialog_content)
 
         # print("dialog_content: \n", dialog_content)
@@ -181,10 +177,6 @@ class ManufactureSpider(scrapy.Spider):
         quality_control = ", ".join(quality_control) if quality_control else "-1"
         certificates = ", ".join(certificates) if certificates else "-1"
 
-        # self.driver.execute_script("window.open('');")
-        # self.driver.switch_to.window(self.driver.window_handles[1])
-        # self.driver.get(base_url)
-
         try:
             close_button = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, "//a[@class='next-dialog-close']"))
@@ -197,9 +189,11 @@ class ManufactureSpider(scrapy.Spider):
         self.driver.get(base_url)
         
         try:
-            main_category = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]/text()")
+            # Select the element containing the 'Main categories' text
+            main_category_element = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]")
+            main_category_text = main_category_element.text
             time.sleep(2)
-            print(f"Main category: {main_category.text}")
+            print(f"Main category: {main_category_text}")
         except TimeoutException: 
             print(f"Main category remains the same for {name}")
         except NoSuchElementException: 
