@@ -2,6 +2,7 @@ import scrapy
 import re
 import os
 import time
+import random
 import pandas as pd
 import datetime
 from lxml import etree
@@ -10,6 +11,7 @@ from alibaba.items import ManufactureItem
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -32,6 +34,12 @@ class ManufactureGroupOneSpider(scrapy.Spider):
     current_manufacture_name = ""
     csv_directories = []
     chrome_options = webdriver.ChromeOptions()
+
+    scrolling_class = [".//div[@class='module-verifiedAllProducts']", 
+                        "//div[@class='module-verifiedVlog']", 
+                        "//div[@class='J_module']", 
+                        "//div[@class='module-ratingsAndReviews']", 
+                        "//div[@class='module-verifiedProfile']"]
 
 
     def __init__(self):
@@ -83,6 +91,13 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         else:
             print("No proxy is being used for this request.")
 
+        user_agent = response.request.headers.get('User-Agent', None)
+    
+        if user_agent:
+            print(f"User Agent being used: {user_agent.decode('utf-8')}")
+        else:
+            print("No User Agent set for this request")
+
         url = response.url
         
         parsed_url = urlparse(url)
@@ -90,9 +105,37 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         print("base_url: ", base_url)
 
-        self.chrome_options.add_argument('--proxy-server=%s' % proxy)
+        self.chrome_options.add_argument(f'--proxy-server={proxy}')
+
+        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
 
         self.driver.get(response.url)
+        print("self.driver.get(response.url) GETTING URL...")
+        try: 
+            print("catching captcha...")
+            WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, "//div[@class='warnning-text']"))
+        )
+        
+            print("Meet captcha verification! ")
+            print(f"current UA: {user_agent}, current proxy: {proxy}")
+            print("retry with new proxy and new user agent!")
+
+            request = response.request.copy()
+            new_proxy = self.crawler.engine.downloader.middleware.middlewares[0].get_random_proxy()
+            request.meta['proxy'] = new_proxy
+
+            new_user_agent = self.crawler.engine.downloader.middleware.middlewares[1].process_request(request, self)
+            request.headers['User-Agent'] = new_user_agent
+
+            print(f"New UA: {new_user_agent}, new proxy: {new_proxy}")
+
+            # Retry request
+            return scrapy.Request(url=response.url, callback=self.parse_with_selenium, meta={'proxy': new_proxy}, dont_filter=True)
+        except TimeoutException: 
+            pass
+        except NoSuchElementException: 
+            pass
         
         rendered_html = self.driver.page_source
 
@@ -112,6 +155,16 @@ class ManufactureGroupOneSpider(scrapy.Spider):
             re_scrape = True
             main_categories = main_categories[17:].rsplit(' ', 1)[0]
         print("main category: ", main_categories)
+
+        wait = WebDriverWait(self.driver, 10)
+
+        for point_class in self.scrolling_class: 
+            try: 
+                element = wait.until(EC.element_to_be_clickable((By.XPATH, point_class)))
+                ActionChains(self.driver).move_to_element(element).perform()
+                time.sleep(random.uniform(1, 3))
+            except TimeoutException: 
+                print("Should change proxy and start again")
 
         score = response.xpath("//span[@class='score-text']/text()").get(default=-1)
         
@@ -156,11 +209,9 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         new_products_launched_last_year = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'launched')]/strong/text()").get(default="-1")
         r_d_engineers = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'engineers')]/strong/text()").get(default="-1")
 
-        # Obtain main category link
-
         view_capabilities_button = self.driver.find_element(By.CLASS_NAME, "all-tags")
         view_capabilities_button.click()
-        time.sleep(2)
+        time.sleep(random.uniform(1, 5))
 
         dialog_content = self.driver.find_element(By.CLASS_NAME, "tags-dialog").get_attribute('innerHTML')
         print(dialog_content)

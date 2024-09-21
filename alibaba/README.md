@@ -38,3 +38,8 @@ brew services stop redis
 # An Error like this, then, pkill chromedriver
 
 selenium.common.exceptions.WebDriverException: Message: Service /Users/liuqiming/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-arm64/chromedriver unexpectedly exited. Status code was: -9
+
+# Useful Blogs
+
+UA-switching
+https://blog.csdn.net/SoraAkalin/article/details/104469189

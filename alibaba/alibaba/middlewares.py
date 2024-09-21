@@ -195,6 +195,5 @@ class RandomUserAgentMidddlware(object):
             return getattr(self.ua, self.ua_type)
 
         request.headers.setdefault('User-Agent', get_ua())
-
-
+        return request.headers['User-Agent']
 

@@ -54,7 +54,7 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-   'alibaba.middlewares.RandomUserAgentMidddlware': 300,
+   # 'alibaba.middlewares.RandomUserAgentMidddlware': 200,
    'alibaba.middlewares.ProxyMiddleware': 300,
    "alibaba.middlewares.AlibabaDownloaderMiddleware": 543,
    'alibaba.downloadermiddlewares.useragent.UserAgentMiddleware': None,

@@ -4,10 +4,12 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 import json
+import random
 from scrapy import signals
 import logging
 import requests
 import urllib3
+from fake_useragent import UserAgent
 
 # Disable urllib3 logging
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -180,4 +182,23 @@ class ProxyMiddleware(object):
         return cls(
             proxy_url=settings.get('PROXY_URL')
         )
+
+class RandomUserAgentMiddleware(UserAgentMiddleware):
+    """
+        自动随机更换UA
+    """
+    def __init__(self, user_agent_list):
+        super(RandomUserAgentMiddleware, self).__init__()
+        self.user_agent_list = user_agent_list
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(
+            user_agent_list=crawler.settings.get('USER_AGENT')
+        )
+
+    def process_request(self, request, spider):
+        random_user_agent = random.choice(self.user_agent_list)
+        request.headers.setdefault('User-Agent', random_user_agent)
+
 
