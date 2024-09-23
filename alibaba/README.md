@@ -10,7 +10,9 @@ https://github.com/jhao104/proxy_pool/tree/release-2.4.0
 
 Go to alibaba folder, run
 
+'''
 pip install -r requirements.txt
+'''
 
 Go to alibaba folder, run
 
