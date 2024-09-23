@@ -11,15 +11,15 @@ source myenv/bin/activate
 
 https://textileframe.en.alibaba.com/factory.html?wx_navbar_transparent=true&productId=60708538690
 
-## Product list URL
+## Getting pictures - Product list URL
 
 https://textileframe.en.alibaba.com/productlist.html
 
-## Manufacture profile URL
+## Getting main text data - Manufacture profile URL
 
 https://www.alibaba.com/factory/index.html?spm=a2700.product_home_l0.home-tab.manufacturers
 
-## Manufacture example category URL (Power Transmission)
+## Getting all manufactures - Manufacture example category URL (Power Transmission)
 
 https://www.alibaba.com/factory/Power-Transmission_p201723202?spm=a2700.factory_home.category_nav.category_popup
 

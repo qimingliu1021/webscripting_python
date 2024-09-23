@@ -35,6 +35,7 @@ class ManufactureGroupOneSpider(scrapy.Spider):
     csv_directories = []
     chrome_options = webdriver.ChromeOptions()
 
+    # For random scrolling at main page
     scrolling_class = [".//div[@class='module-verifiedAllProducts']", 
                         "//div[@class='module-verifiedVlog']", 
                         "//div[@class='J_module']", 

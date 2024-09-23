@@ -112,16 +112,16 @@ class AlibabaDownloaderMiddleware:
 
 
 
-# 代理池接口
+# Proxy pool port
 PROXY_URL = 'http://127.0.0.1:5010/get'
 
 class ProxyMiddleware(object):
-    # 初始化
+
     def __init__(self, proxy_url):
         self.logger = logging.getLogger(__name__)
         self.proxy_url = proxy_url
  
-    # 获取随机代理IP
+    # Get the random proxy obtained from the port
     def get_random_proxy(self):
         # print("\n-------------- START OF get_random_proxy() -------------- \n")
         try:
@@ -149,26 +149,16 @@ class ProxyMiddleware(object):
         proxy = self.get_random_proxy()
         # print(f"proxy is: {proxy}")
         if proxy:
-            self.logger.debug('======' + '使用代理 ' + str(proxy) + "======")
+            self.logger.debug('======' + 'USING PROXY: ' + str(proxy) + "======")
             request.meta['proxy'] = proxy
  
     def process_response(self, request, response, spider):
-        # print("\n-------------- START OF MIDWARE process_response() -------------- \n")
         if response.status != 200:
             print(f"response.status not obtained, returning request: {request}\n")
             request.meta['proxy'] = proxy
-            print("\n-------------- END OF MIDWARE process_response() code != 200 -------------- \n")
             return request
 
-        # proxy = request.meta.get('proxy', None)
-        # if proxy:
-        #     self.logger.debug(f"Response from proxy: {proxy} for request: {request.url}")
-        
-        # if response.status != 200:
-        #     self.logger.debug(f"Retrying request with proxy: {proxy}")
-        #     return self.process_request(request, spider)
         print(f"Response: {response}\n")
-        print("\n-------------- END OF MIDWARE process_response() code == 200 -------------- \n")
         return response
  
     @classmethod
