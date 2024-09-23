@@ -16,7 +16,9 @@ pip install -r requirements.txt
 
 Go to alibaba folder, run
 
+```
 scrapy crawl manufacture_group_1
+```
 
 ## How it works
 
