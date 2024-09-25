@@ -5,10 +5,15 @@
 
 import json
 from scrapy import signals
+import scrapy
 import logging
 import requests
 import urllib3
 from fake_useragent import UserAgent
+from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
+import random
+import time
+
 
 # Disable urllib3 logging
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -169,21 +174,34 @@ class ProxyMiddleware(object):
         )
 
 
-class RandomUserAgentMidddlware(object):
-    def __init__(self, crawler):
-        super(RandomUserAgentMidddlware, self).__init__()
-        self.ua = UserAgent()
-        self.ua_type = crawler.settings.get('RANDOM_UA_TYPE', 'random')
-
+class MyUserAgentMiddleware(UserAgentMiddleware):
+    '''
+    设置User-Agent
+    '''
+ 
+    def __init__(self, user_agent):
+        self.user_agent = user_agent
+ 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
-
+        user_agent = crawler.settings.get('MY_USER_AGENT')
+        # print("user_agent obtained: \n", user_agent) 
+        return cls(
+            user_agent=user_agent
+        )
+ 
     def process_request(self, request, spider):
-        def get_ua():
-            print(f"UA obtained: {self.ua}, type is: {self.ua_type}")
-            return getattr(self.ua, self.ua_type)
+        agent = random.choice(self.user_agent)
+        request.headers['User-Agent'] = agent
 
-        request.headers.setdefault('User-Agent', get_ua())
-        return request.headers['User-Agent']
+
+# class SeleniumDownloaderMiddleware:
+#     def process_request(self, request , spider):
+#         if spider.name == 'cnki':
+#             spider.driver.get(request.url)
+#             time.sleep(2)
+#             print(f"当前访问{request.url}")
+#             spider.driver.refresh()
+#             time.sleep(3)
+#             return HtmlResponse(url=spider.driver.current_url,body=spider.driver.page_source,encoding='utf-8')
 

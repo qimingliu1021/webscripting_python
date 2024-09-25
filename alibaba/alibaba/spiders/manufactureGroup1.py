@@ -92,9 +92,9 @@ class ManufactureGroupOneSpider(scrapy.Spider):
     def parse_with_selenium(self, response):
 
         # Checking what proxy is being used now
-        proxy = response.meta.get('proxy')
-        if proxy:
-            print(f"Using proxy: {proxy}")
+        PROXY = response.meta.get('proxy')
+        if PROXY:
+            print(f"Using proxy: {PROXY}")
         else:
             print("No proxy is being used for this request.")
         
@@ -108,48 +108,21 @@ class ManufactureGroupOneSpider(scrapy.Spider):
 
         url = response.url
         parsed_url = urlparse(url)
-        # visiting the page that has complete "main categories" by changing the url
+        
+        # set up the link for the page that has complete "main categories" by changing the url
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
         # Make sure the proxy is being used by selenium
-        self.chrome_options.add_argument(f'--proxy-server={proxy}')
+        self.chrome_options.add_argument('--proxy-server=%s' % PROXY)
         self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
         self.driver.get(response.url)
         print("self.driver.get(response.url) GETTING URL...")
         # ENHANCEMENT NEEDED - with captcha. Once met captcha, change UA and proxy
-        try: 
-            print("catching captcha...")
-            WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, "//div[@class='warnning-text']"))
-        )
-
-            print("Meet captcha verification! ")
-            print(f"current UA: {user_agent}, current proxy: {proxy}")
-            print("retry with new proxy and new user agent!")
-
-            request = response.request.copy()
-            new_proxy = self.crawler.engine.downloader.middleware.middlewares[0].get_random_proxy()
-            request.meta['proxy'] = new_proxy
-
-            new_user_agent = self.crawler.engine.downloader.middleware.middlewares[1].process_request(request, self)
-            request.headers['User-Agent'] = new_user_agent
-
-            print(f"New UA: {new_user_agent}, new proxy: {new_proxy}")
-
-            # Retry request
-            return scrapy.Request(url=response.url, callback=self.parse_with_selenium, meta={'proxy': new_proxy}, dont_filter=True)
-        except TimeoutException: 
-            pass
-        except NoSuchElementException: 
-            pass
+        if ("_____tmd_____/punish?" in self.driver.current_url): 
+            print("-------------- met captcha --------------")
+            print("Consider changing a proxy or UA")
         
         rendered_html = self.driver.page_source
-
-        # Storing html data
-        # cur_log_path = os.path.join(self.log_store, f"{self.file_count}_{self.now}.html")
-        # with open(cur_log_path, "w", encoding='utf-8') as f: 
-        #     print(f"Get the response of file {self.file_count}, now writing to file")
-        #     f.write(rendered_html)
         
         # supplement response with the response obtained by selenium
         response = scrapy.http.TextResponse(url=response.url, body=rendered_html, encoding='utf-8')

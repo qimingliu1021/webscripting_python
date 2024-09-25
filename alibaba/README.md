@@ -36,8 +36,12 @@ The problem now is switching UA and proxy seemingly doesn't work.
 
 ### Virtual Environment
 
+'''
 python3 -m venv myenv
+'''
+'''
 source myenv/bin/activate
+'''
 
 ## Redis common commands
 
@@ -71,10 +75,10 @@ https://www.alibaba.com/factory/Power-Transmission_p201723202?spm=a2700.factory_
 
 https://xmksyl.en.alibaba.com//factory.html/_____tmd_____/punish?x5secdata=xcn95togwpYx5ObT5jF5xyrUf5SRxZnULTdH7AqEyb%2fQxfqpEWRXoFThgB%2fZ95wyg2%2fbfV%2flIeeVh0fXgXLXu%2fypTSVcLn9vJnTTtvkP%2b04FJP8JkFITpAxFJUIEqdWyXZ5ojuSHF0wd2KuiMqj8PaIlOGAO6AtmWJUfWkEX72rtEJZZkhSsda7YxBqls7%2fltn8r%2fEw9yM2zlKuMQ7FpGtTw%3d%3d__bx__xmksyl.en.alibaba.com%2ffactory.html&x5step=1
 
-
 ## Common error handling
 
 ### kill the driver
+
 When running an Error like this, then, pkill chromedriver
 
 selenium.common.exceptions.WebDriverException: Message: Service /Users/liuqiming/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-arm64/chromedriver unexpectedly exited. Status code was: -9
@@ -83,7 +87,7 @@ selenium.common.exceptions.WebDriverException: Message: Service /Users/liuqiming
 
 UA-switching
 
-https://blog.csdn.net/SoraAkalin/article/details/104469189
+https://blog.csdn.net/ljh574649119/article/details/137870438
 
 Proxy-switching program setup
 
