@@ -2,7 +2,6 @@ import scrapy
 import re
 import os
 import time
-import random
 import pandas as pd
 import datetime
 from lxml import etree
@@ -10,21 +9,26 @@ from urllib.parse import urlparse
 from alibaba.items import ManufactureItem
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import logging
+import random
+from scrapy.utils.project import get_project_settings
+import json
+import requests
 
 # Set logging level to WARNING
 logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.WARNING)
 
 class ManufactureGroupOneSpider(scrapy.Spider):
     name = "manufacture_group_1"
-    csv_store_base = "data_group_1"
-    csv_path = "gruop_1"
+    # csv_store_base = "data_group_1"
+    csv_store_base = "data"
+    csv_path = "gruop_1_main"
     allowed_domains = ["alibaba.com"]
     now = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_count = 1
@@ -32,37 +36,54 @@ class ManufactureGroupOneSpider(scrapy.Spider):
     log_store = os.makedirs("LOGS", exist_ok=True)
     log_store = "LOGS"
     current_manufacture_name = ""
+    cur_dir = ""
     csv_directories = []
     chrome_options = webdriver.ChromeOptions()
-
-    # Different page positions for random scrolling at main page
     scrolling_class = [".//div[@class='module-verifiedAllProducts']", 
                         "//div[@class='module-verifiedVlog']", 
                         "//div[@class='J_module']", 
                         "//div[@class='module-ratingsAndReviews']", 
                         "//div[@class='module-verifiedProfile']"]
-
-
+    user_agent = ""
+    
     def __init__(self):
 
-        # Get all manufacture directories in list for later go through
         self.csv_directories = [d for d in os.listdir(self.csv_store_base)
                                 if os.path.isdir(os.path.join(self.csv_store_base, d)) and d != "LOGS"]
-        
-        # Debug purposes
         print("categories are: ", self.csv_directories)
         
         if not self.csv_directories:
             raise ValueError("No valid directories found under 'data/' except 'LOGS'.")
 
         # Initialize Selenium WebDriver (Chrome)
+        self.chrome_options = webdriver.ChromeOptions()
         # chrome_options.add_argument("--headless")  # Run in headless mode
+        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
         self.chrome_options.add_argument("--no-sandbox")
         self.chrome_options.add_argument("--disable-dev-shm-usage")
         self.chrome_options.add_argument("--disable-gpu")
         self.chrome_options.add_argument("--disable-software-rasterizer")
-        
-        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
+        settings = get_project_settings()
+        user_agent = random.choice(settings.get('MY_USER_AGENT'))
+        self.chrome_options.add_argument(f"user-agent={user_agent}")
+    
+    def get_random_proxy(self, proxy_url='http://127.0.0.1:5010/get'):
+        try:
+            response = requests.get(proxy_url)
+            if response.status_code == 200:
+                p = json.loads(response.text)
+                proxy = "http://" + "{}".format(p.get('proxy'))
+                ip = {"http": proxy, "https": proxy}
+                r = requests.get("https://betteractive.en.alibaba.com/factory.html", proxies=ip, timeout=60)
+                if r.status_code == 200:
+                    print(f"Get the proxy: {proxy}...")
+                    return proxy
+            else:
+                print(f"Can't get proxy from {proxy_url}")
+                return self.get_random_proxy()
+        except Exception as e:
+            print(f"get_random_proxy() failed with error: {e}")
+            return self.get_random_proxy()
 
 
     def start_requests(self): 
@@ -73,82 +94,103 @@ class ManufactureGroupOneSpider(scrapy.Spider):
             if not os.path.exists(self.csv_path):
                 print(f"CSV file not found in directory: {directory}, skipping.")
                 continue
+            self.cur_dir = directory
             df = pd.read_csv(self.csv_path)
             for index, row in df.iterrows(): 
                 self.file_count += 1
+                self.current_manufacture_name = row['name']
                 time.sleep(2)
                 link = row['link']
-                
-                # for debug purpose
                 print(f"------------------------------------------")
                 print(f"Time begins: {self.begin_time}, \nTime now: {datetime.datetime.now()}")
                 print(f"On directory {directory}")
-                print(f"getting {row['name']}, {link}")
+                print(f"getting {self.current_manufacture_name}, {link}")
                 print(f"------------------------------------------")
-
                 yield scrapy.Request(link, callback=self.parse_with_selenium)
 
 
     def parse_with_selenium(self, response):
 
-        # Checking what proxy is being used now
-        PROXY = response.meta.get('proxy')
-        if PROXY:
-            print(f"Using proxy: {PROXY}")
+        proxy = response.meta.get('proxy')
+        if proxy:
+            print(f"Using proxy: {proxy}")
         else:
             print("No proxy is being used for this request.")
         
-        # Checking what user-agent is being used now
-        user_agent = response.request.headers.get('User-Agent', None)
-
-        if user_agent:
-            print(f"User Agent being used: {user_agent.decode('utf-8')}")
-        else:
-            print("No User Agent set for this request")
-
         url = response.url
-        parsed_url = urlparse(url)
-        
-        # set up the link for the page that has complete "main categories" by changing the url
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-        # Make sure the proxy is being used by selenium
-        self.chrome_options.add_argument('--proxy-server=%s' % PROXY)
-        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
+        print(f"Using UA: {response.request.headers.get('User-Agent').decode('utf-8')}")
+
+        parsed_url = urlparse(url)
+
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        print("base_url: ", base_url)
+
+        self.chrome_options.add_argument('--proxy-server=%s' % proxy)
+
         self.driver.get(response.url)
-        print("self.driver.get(response.url) GETTING URL...")
-        # ENHANCEMENT NEEDED - with captcha. Once met captcha, change UA and proxy
-        if ("_____tmd_____/punish?" in self.driver.current_url): 
-            print("-------------- met captcha --------------")
-            print("Consider changing a proxy or UA")
+
+        time.sleep(random.uniform(3, 10))
         
         rendered_html = self.driver.page_source
+
+        def deal_captcha(): 
+            proxy = self.get_random_proxy()
+            # user_agent = ('MY_USER_AGENT')
+            settings = get_project_settings()
+            user_agent = random.choice(settings.get('MY_USER_AGENT'))
+            self.chrome_options.add_argument(f"user-agent={user_agent}")
+            self.chrome_options.add_argument('--proxy-server=%s' % proxy)
+            print("New proxy is: ", proxy)
+            print("New UA is: ", user_agent)
+            print("Sending the request again...")
+            self.driver.get(response.url)
+            if self.driver.find_element(By.XPATH, ".//div[@class='warnning-text']"): 
+                print("Met captcha, changing UA and proxy and retry getting this page!")
+                deal_captcha()
+
+        try: 
+            self.driver.find_element(By.XPATH, ".//div[@class='warnning-text']")
+            print("Met captcha, changing UA and proxy and retry getting this page!")
+            deal_captcha()
+        except NoSuchElementException: 
+            print("No captcha found. Everything's good. continue")
+
+
+        for point_class in self.scrolling_class: 
+            try: 
+                element = self.driver.find_element(By.XPATH, point_class)
+                ActionChains(self.driver).move_to_element(element).perform()
+                time.sleep(random.uniform(1, 3))
+            except NoSuchElementException: 
+                print("NoSuchElementException raised. Aborting")
+                break
+            except TimeoutException: 
+                print("NoSuchElementException raised. Aborting")
+                break
+
+        cur_log_path = os.path.join(self.log_store, f"{self.file_count}_{self.current_manufacture_name}_{self.now}.html")
+        with open(cur_log_path, "w", encoding='utf-8') as f: 
+            print(f"Get the response of file {self.file_count}, now writing to file")
+            f.write(rendered_html)
         
-        # supplement response with the response obtained by selenium
         response = scrapy.http.TextResponse(url=response.url, body=rendered_html, encoding='utf-8')
 
         name = response.xpath("//div[@class='shop-sign']//h1/text()").get(default=-1)
         location = response.xpath("//div[@class='company-info']/span/text()").get(default=-1)
 
-        # Main categories are often incomplete, checking if incomplete, then click "visit store" to get complete main category data there
         main_categories = response.xpath("//div[@class='company-info']/span[contains(text(), 'Main categories')]/text()").get(default=-1)
         re_scrape = False
-        if main_categories != -1 and "..." in main_categories:
-            re_scrape = True
+        if main_categories != -1:
+            print(f"\nGet the main category from the main page! which is: {main_categories}\n")
+            if  "..." in main_categories:
+                print("\n'...' is in main category, try to re-scrape from base_url! set re_scrape to True\n")
+                re_scrape = True
+        if len(main_categories)>80: 
             main_categories = main_categories[17:].rsplit(' ', 1)[0]
+        else: 
+            main_categories = main_categories[17:]
         print("main category: ", main_categories)
-
-        wait = WebDriverWait(self.driver, 10)
-
-        # Mimic human operation - random page class navigation and random time staying in the page
-        for point_class in self.scrolling_class: 
-            try: 
-                # Haven't implement random class selection yet
-                element = wait.until(EC.element_to_be_clickable((By.XPATH, point_class)))
-                ActionChains(self.driver).move_to_element(element).perform()
-                time.sleep(random.uniform(1, 3))
-            except TimeoutException: 
-                print("Should change proxy and start again")
 
         score = response.xpath("//span[@class='score-text']/text()").get(default=-1)
         
@@ -193,19 +235,25 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         new_products_launched_last_year = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'launched')]/strong/text()").get(default="-1")
         r_d_engineers = response.xpath("//div[@class='profile-list authRdCapacity']/div[@class='profile-detail'][contains(text(), 'engineers')]/strong/text()").get(default="-1")
 
-        # Click "See all verified capabilities (12)" button to get "verified capabilities"
+        # Obtain main category link
+
         view_capabilities_button = self.driver.find_element(By.CLASS_NAME, "all-tags")
         view_capabilities_button.click()
         time.sleep(random.uniform(1, 5))
 
         dialog_content = self.driver.find_element(By.CLASS_NAME, "tags-dialog").get_attribute('innerHTML')
-        print(dialog_content)
         dialog_tree = etree.HTML(dialog_content)
-
+        print("dialog_content obtained: \n", dialog_content)
         services = dialog_tree.xpath("//span[text()='Service']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
+        print("------------------- obtained by dialog_tree.xpath ---------------")
+        print("services: ", services)
         quality_control = dialog_tree.xpath("//span[text()='Quality control']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
+        print("quality_controls: ", quality_control)
         certificates = dialog_tree.xpath("//span[text()='Certifications']/following-sibling::div[@class='list-item']//span[@class='hover-span']/text()")
+        print("certificates: ", certificates)
 
+
+        # If any of these are empty, return -1 as a fallback
         services = ", ".join(services) if services else "-1"
         quality_control = ", ".join(quality_control) if quality_control else "-1"
         certificates = ", ".join(certificates) if certificates else "-1"
@@ -218,23 +266,24 @@ class ManufactureGroupOneSpider(scrapy.Spider):
             print("Dialog closed successfully.")
         except Exception as e:
             print(f"Failed to close the dialog: {e}")
+
+        time.sleep(random.uniform(1, 5))
         
         self.driver.get(base_url)
         
-        # If "visit store" page has no "main category" to scrape then remains what gets from main page
         if re_scrape:
+            print("re scraping main categories...")
             try:
                 main_categories_element = self.driver.find_element(By.XPATH, "//div[contains(@class, 'info-line') and contains(text(), 'Main categories')]")
                 main_categories = main_categories_element.text
-                main_categories[17:]
+                main_categories = main_categories[17:]
                 time.sleep(2)
-                print(f"Main category: {main_categories}")
+                print(f"Main category re-scraped: {main_categories}")
             except TimeoutException: 
                 print(f"Main category remains the same for {name}")
             except NoSuchElementException: 
                 print(f"Main category remains the same for {name}")
 
-        # According to definitions in items.py
         item = ManufactureItem(
             name=name, 
             url=url,
@@ -269,7 +318,6 @@ class ManufactureGroupOneSpider(scrapy.Spider):
         for key in item: 
             print(f"{key}: {item.get(key)}")
         
-        print("In spider file - yielding item...")
         yield item
 
     def closed(self, reason):

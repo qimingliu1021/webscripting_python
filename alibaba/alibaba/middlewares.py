@@ -13,7 +13,16 @@ from fake_useragent import UserAgent
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 import random
 import time
+from scrapy import signals
+from scrapy.http import HtmlResponse
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
+# Define here the models for your spider middleware
+#
+# See documentation in:
+# https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 # Disable urllib3 logging
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -117,16 +126,16 @@ class AlibabaDownloaderMiddleware:
 
 
 
-# Proxy pool port
+# 代理池接口
 PROXY_URL = 'http://127.0.0.1:5010/get'
 
 class ProxyMiddleware(object):
-
+    # 初始化
     def __init__(self, proxy_url):
         self.logger = logging.getLogger(__name__)
         self.proxy_url = proxy_url
  
-    # Get the random proxy obtained from the port
+    # 获取随机代理IP
     def get_random_proxy(self):
         # print("\n-------------- START OF get_random_proxy() -------------- \n")
         try:
@@ -154,16 +163,26 @@ class ProxyMiddleware(object):
         proxy = self.get_random_proxy()
         # print(f"proxy is: {proxy}")
         if proxy:
-            self.logger.debug('======' + 'USING PROXY: ' + str(proxy) + "======")
+            self.logger.debug('======' + '使用代理 ' + str(proxy) + "======")
             request.meta['proxy'] = proxy
  
     def process_response(self, request, response, spider):
+        # print("\n-------------- START OF MIDWARE process_response() -------------- \n")
         if response.status != 200:
             print(f"response.status not obtained, returning request: {request}\n")
             request.meta['proxy'] = proxy
+            print("\n-------------- END OF MIDWARE process_response() code != 200 -------------- \n")
             return request
 
+        # proxy = request.meta.get('proxy', None)
+        # if proxy:
+        #     self.logger.debug(f"Response from proxy: {proxy} for request: {request.url}")
+        
+        # if response.status != 200:
+        #     self.logger.debug(f"Retrying request with proxy: {proxy}")
+        #     return self.process_request(request, spider)
         print(f"Response: {response}\n")
+        print("\n-------------- END OF MIDWARE process_response() code == 200 -------------- \n")
         return response
  
     @classmethod
@@ -194,14 +213,4 @@ class MyUserAgentMiddleware(UserAgentMiddleware):
         agent = random.choice(self.user_agent)
         request.headers['User-Agent'] = agent
 
-
-# class SeleniumDownloaderMiddleware:
-#     def process_request(self, request , spider):
-#         if spider.name == 'cnki':
-#             spider.driver.get(request.url)
-#             time.sleep(2)
-#             print(f"当前访问{request.url}")
-#             spider.driver.refresh()
-#             time.sleep(3)
-#             return HtmlResponse(url=spider.driver.current_url,body=spider.driver.page_source,encoding='utf-8')
 

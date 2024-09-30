@@ -53,12 +53,21 @@ SPIDER_MIDDLEWARES = {
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+SPLASH_URL = 'http://127.0.0.1:8050'
 DOWNLOADER_MIDDLEWARES = {
+   'scrapy_splash.SplashCookiesMiddleware': 723,
+   'scrapy_splash.SplashMiddleware': 725,
    'alibaba.middlewares.MyUserAgentMiddleware': 200,
    'alibaba.middlewares.ProxyMiddleware': 300,
+   # 'scrapy_selenium.SeleniumMiddleware': 800, 
    'scrapy.downloadermiddleware.httpproxy.HttpProxyMiddleware': None,
    'scrapy.downloadermiddleware.useragent.UserAgentMiddleware': None, 
 }
+# 去重过滤器
+DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+# 使用Splash的Http缓存
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
+
 
 RANDOM_UA_TYPE = "random"
 
@@ -102,6 +111,8 @@ AUTOTHROTTLE_MAX_DELAY = 60
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+LOG_LEVEL = "ERROR"
 
 MY_USER_AGENT = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
